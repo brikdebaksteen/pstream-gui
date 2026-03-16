@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PSTREAM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Sora:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --red:#e50914;--bg:#080808;--s1:#111;--s2:#181818;--s3:#222;
+  --border:#2c2c2c;--muted:#555;--text:#e4e4e4;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--text);font-family:'Sora',sans-serif;min-height:100vh}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+header{position:sticky;top:0;z-index:60;background:linear-gradient(180deg,#000 55%,transparent);
+  padding:16px 40px;display:flex;align-items:center;gap:24px}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:2.1rem;letter-spacing:5px;
+  color:var(--red);text-shadow:0 0 22px rgba(229,9,20,.5);flex-shrink:0;user-select:none}
+.sw{flex:1;max-width:500px;position:relative}
+.sw input{width:100%;background:var(--s1);border:1px solid var(--border);color:var(--text);
+  padding:10px 16px 10px 42px;border-radius:8px;font-family:'Sora',sans-serif;font-size:.88rem;
+  outline:none;transition:border-color .2s,box-shadow .2s}
+.sw input:focus{border-color:var(--red);box-shadow:0 0 0 3px rgba(229,9,20,.1)}
+.sw .si{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}
+
+#sbadge{margin-left:auto;display:none;align-items:center;gap:8px;background:var(--s2);
+  border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:.76rem;color:#999}
+#sbadge.active{display:flex;border-color:rgba(229,9,20,.3)}
+#sbadge .dot{width:7px;height:7px;border-radius:50%;background:var(--red);animation:pulse 1.4s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+#sbadge button{background:none;border:1px solid var(--border);color:var(--muted);
+  border-radius:5px;padding:2px 8px;font-size:.7rem;cursor:pointer;font-family:'Sora',sans-serif;
+  transition:color .15s,border-color .15s}
+#sbadge button:hover{color:var(--red);border-color:var(--red)}
+
+main{padding:0 40px 80px}
+.stitle{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:3px;color:var(--muted);margin-bottom:16px}
+#grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:13px}
+
+.card{background:var(--s1);border-radius:9px;overflow:hidden;cursor:pointer;
+  border:1px solid transparent;transition:transform .22s,box-shadow .22s,border-color .22s}
+.card:hover{transform:translateY(-5px) scale(1.025);box-shadow:0 18px 38px rgba(0,0,0,.75);
+  border-color:var(--border);z-index:2}
+.card img{width:100%;aspect-ratio:2/3;object-fit:cover;display:block;background:var(--s2)}
+.cb{padding:8px 10px 10px}
+.ct{font-size:.79rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px}
+.cm{font-size:.68rem;color:var(--muted);display:flex;gap:6px;align-items:center}
+.sb{font-size:.61rem;background:rgba(229,9,20,.1);color:var(--red);
+  border:1px solid rgba(229,9,20,.22);border-radius:3px;padding:1px 5px}
+
+.state{grid-column:1/-1;text-align:center;padding:80px 0;color:var(--muted)}
+.state .big{font-family:'Bebas Neue',sans-serif;font-size:4rem;color:var(--border);display:block;margin-bottom:6px}
+.spinner{width:30px;height:30px;border:3px solid var(--border);border-top-color:var(--red);
+  border-radius:50%;animation:spin .65s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* overlay */
+#ov{display:none;position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.9);
+  backdrop-filter:blur(10px);align-items:center;justify-content:center;padding:18px}
+#ov.open{display:flex}
+.modal{background:var(--s1);border:1px solid var(--border);border-radius:13px;
+  width:100%;max-width:830px;max-height:92vh;overflow-y:auto;animation:mIn .2s ease}
+@keyframes mIn{from{opacity:0;transform:scale(.96) translateY(10px)}to{opacity:1;transform:none}}
+
+.mhero{display:flex;gap:22px;padding:24px;border-bottom:1px solid var(--border)}
+.mposter{width:125px;flex-shrink:0;border-radius:7px;overflow:hidden;background:var(--s2)}
+.mposter img{width:100%;display:block}
+.minfo{flex:1;min-width:0}
+.mtop{display:flex;align-items:flex-start;gap:8px;margin-bottom:7px}
+.mtitle{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:1px;
+  line-height:1.1;flex:1;min-width:0;word-break:break-word}
+.mclose{background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.15rem;
+  padding:1px 5px;transition:color .15s;flex-shrink:0}
+.mclose:hover{color:#fff}
+.mtags{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:9px}
+.tag{font-size:.68rem;background:var(--s2);border:1px solid var(--border);
+  border-radius:4px;padding:2px 7px;color:var(--muted)}
+.tag.r{border-color:rgba(229,9,20,.28);color:var(--red);background:rgba(229,9,20,.07)}
+.mdesc{font-size:.81rem;color:#888;line-height:1.65;
+  display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+
+.mfiles{padding:18px 24px 24px}
+.mfh{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.mfh h3{font-family:'Bebas Neue',sans-serif;letter-spacing:2px;font-size:.9rem;color:var(--muted)}
+
+/* season accordion */
+.sblock{margin-bottom:8px;border:1px solid var(--border);border-radius:9px;overflow:hidden}
+.shdr{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;
+  background:var(--s2);cursor:pointer;transition:background .13s;user-select:none}
+.shdr:hover{background:var(--s3)}
+.shdr.open{border-bottom:1px solid var(--border)}
+.sname{font-weight:600;font-size:.88rem;display:flex;align-items:center;gap:9px}
+.sname .ec{font-size:.7rem;color:var(--muted);font-weight:400}
+.sact{display:flex;gap:7px;align-items:center}
+.chev{color:var(--muted);font-size:.8rem;transition:transform .18s}
+.shdr.open .chev{transform:rotate(180deg)}
+.eplist{flex-direction:column;display:none}
+
+.eprow{display:flex;align-items:center;gap:11px;padding:9px 14px;
+  border-bottom:1px solid var(--border);transition:background .1s}
+.eprow:last-child{border-bottom:none}
+.eprow:hover{background:var(--s3)}
+.epn{font-size:.7rem;color:var(--muted);width:26px;flex-shrink:0;font-weight:600}
+.epname{flex:1;font-size:.8rem;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.epsize{font-size:.68rem;color:var(--muted);flex-shrink:0;width:55px;text-align:right}
+.epact{display:flex;gap:5px;flex-shrink:0}
+
+.flist{display:flex;flex-direction:column;gap:6px}
+.frow{display:flex;align-items:center;gap:11px;background:var(--s2);border:1px solid var(--border);
+  border-radius:7px;padding:10px 13px;transition:border-color .13s,background .13s;cursor:pointer}
+.frow:hover{border-color:var(--red);background:rgba(229,9,20,.04)}
+.fname{flex:1;font-size:.81rem;word-break:break-all}
+.fsize{font-size:.7rem;color:var(--muted);flex-shrink:0}
+
+/* buttons */
+.btn{border:none;border-radius:6px;cursor:pointer;font-family:'Sora',sans-serif;
+  font-weight:500;transition:opacity .13s;white-space:nowrap}
+.btn:hover{opacity:.82}
+.bplay{background:var(--red);color:#fff;font-size:.73rem;padding:6px 11px}
+.bdl{background:var(--s3);color:#bbb;border:1px solid var(--border);font-size:.73rem;padding:5px 9px}
+.bdl:hover{border-color:#aaa;color:#fff}
+.bsm{padding:5px 8px;font-size:.7rem}
+
+.ml{display:flex;align-items:center;gap:9px;color:var(--muted);font-size:.83rem;padding:16px 0}
+
+/* toast */
+#toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(14px);
+  background:var(--s2);border:1px solid var(--border);border-radius:8px;
+  padding:10px 20px;font-size:.83rem;opacity:0;transition:opacity .22s,transform .22s;
+  z-index:200;pointer-events:none}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast.ok{border-color:rgba(229,9,20,.35);color:var(--red)}
+#toast.err{border-color:#544;color:#e88}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">PSTREAM</div>
+  <div class="sw">
+    <span class="si">⌕</span>
+    <input id="q" type="text" placeholder="Zoek film of serie...  ↵ Enter" autocomplete="off">
+  </div>
+  <div id="sbadge">
+    <span class="dot"></span>
+    <span id="btext">Verbinding...</span>
+    <button onclick="stopStream()">■ Stop</button>
+  </div>
+</header>
+
+<main>
+  <p class="stitle" id="slabel">WELKOM</p>
+  <div id="grid">
+    <div class="state">
+      <span class="big">PSTREAM</span>
+      Zoek een film of serie om te beginnen
+    </div>
+  </div>
+</main>
+
+<div id="ov">
+  <div class="modal">
+    <div class="mhero">
+      <div class="mposter"><img id="mi" src="" alt=""></div>
+      <div class="minfo">
+        <div class="mtop">
+          <div id="mt" class="mtitle"></div>
+          <button class="mclose" onclick="closeModal()">✕</button>
+        </div>
+        <div id="mtg" class="mtags"></div>
+        <p id="md" class="mdesc"></p>
+      </div>
+    </div>
+    <div class="mfiles">
+      <div class="mfh">
+        <h3>BESTANDEN</h3>
+        <div id="mga"></div>
+      </div>
+      <div id="fb">
+        <div class="ml"><div class="spinner" style="width:16px;height:16px;border-width:2px;margin:0"></div>Laden...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+let curItem = null;
+
+const fmt = b => {
+  if (!b||b==0) return '?';
+  b = Number(b);
+  return b>1e9 ? (b/1e9).toFixed(2)+' GB' : (b/1e6).toFixed(0)+' MB';
+};
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const toast = (msg,type='ok') => {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='show '+type;
+  clearTimeout(t._t); t._t=setTimeout(()=>t.className='',3200);
+};
+
+// ── Streaming badge ────────────────────────────────────────────────────────
+setInterval(async()=>{
+  try {
+    const s = await fetch('/status').then(r=>r.json());
+    const b = document.getElementById('sbadge');
+    if (s.status==='streaming'||s.status==='connecting') {
+      b.classList.add('active');
+      document.getElementById('btext').textContent =
+        s.status==='connecting' ? 'Verbinding...' : `${s.speed||'...'} · ${s.peers||'0'} peers`;
+    } else { b.classList.remove('active'); }
+  } catch {}
+}, 1800);
+
+async function stopStream() {
+  await fetch('/stop');
+  document.getElementById('sbadge').classList.remove('active');
+  toast('⏹ Stream gestopt');
+}
+
+// ── Search ─────────────────────────────────────────────────────────────────
+document.getElementById('q').addEventListener('keydown', async e => {
+  if (e.key!=='Enter') return;
+  const q = e.target.value.trim();
+  if (!q) return;
+  const grid = document.getElementById('grid');
+  document.getElementById('slabel').textContent = `RESULTATEN — ${q.toUpperCase()}`;
+  grid.innerHTML = '<div class="state"><div class="spinner"></div>Zoeken...</div>';
+  try {
+    const data = await fetch('/search?q='+encodeURIComponent(q)).then(r=>r.json());
+    if (!data.length) { grid.innerHTML='<div class="state"><span class="big">404</span>Geen resultaten</div>'; return; }
+    grid.innerHTML='';
+    data.forEach(item => {
+      const m = item.metadata||{};
+      const poster = m.poster||`https://placehold.co/300x450/111/333?text=${encodeURIComponent(item.name.substring(0,10))}`;
+      const c = document.createElement('div');
+      c.className='card';
+      c.innerHTML=`<img src="${esc(poster)}" loading="lazy">
+        <div class="cb">
+          <div class="ct">${esc(item.name)}</div>
+          <div class="cm"><span>${m.year||'—'}</span><span class="sb">▲${item.seeders}</span></div>
+        </div>`;
+      c.onclick=()=>openModal(item);
+      grid.appendChild(c);
+    });
+  } catch { grid.innerHTML='<div class="state"><span class="big">ERR</span>Serverfout</div>'; }
+});
+
+// ── Modal ──────────────────────────────────────────────────────────────────
+async function openModal(item) {
+  curItem = item;
+  const m = item.metadata||{};
+  document.getElementById('mi').src = m.poster||'';
+  document.getElementById('mt').textContent = item.name.replace(/\./g,' ').replace(/_/g,' ');
+  document.getElementById('md').textContent = m.description||'Geen beschrijving.';
+  const tg = document.getElementById('mtg');
+  tg.innerHTML='';
+  if (m.year)    tg.innerHTML+=`<span class="tag">${m.year}</span>`;
+  if (m.rating)  tg.innerHTML+=`<span class="tag">⭐ ${Number(m.rating).toFixed(1)}</span>`;
+  if (m.duration)tg.innerHTML+=`<span class="tag">⏱ ${m.duration} min</span>`;
+  tg.innerHTML+=`<span class="tag r">▲ ${item.seeders} seeders</span>`;
+  tg.innerHTML+=`<span class="tag">${fmt(item.size)}</span>`;
+  document.getElementById('mga').innerHTML='';
+  document.getElementById('fb').innerHTML=
+    '<div class="ml"><div class="spinner" style="width:16px;height:16px;border-width:2px;margin:0"></div>Bestandslijst ophalen...</div>';
+  document.getElementById('ov').classList.add('open');
+  try {
+    const tree = await fetch('/files?hash='+encodeURIComponent(item.info_hash)).then(r=>r.json());
+    renderTree(tree, item.info_hash);
+  } catch {
+    document.getElementById('fb').innerHTML = fallbackRow(item.info_hash);
+  }
+}
+
+function closeModal() { document.getElementById('ov').classList.remove('open'); curItem=null; }
+document.getElementById('ov').addEventListener('click', e => { if(e.target===document.getElementById('ov')) closeModal(); });
+
+// ── Tree ──────────────────────────────────────────────────────────────────
+function renderTree(tree, hash) {
+  const fb = document.getElementById('fb');
+  const ga = document.getElementById('mga');
+  ga.innerHTML=`<button class="btn bdl" onclick="dlAll('${hash}')">⬇ Alles downloaden</button>`;
+
+  if (tree.type==='flat') {
+    if (!tree.files||!tree.files.length) { fb.innerHTML=fallbackRow(hash); return; }
+    fb.innerHTML='<div class="flist"></div>';
+    tree.files.forEach(f => {
+      const r = document.createElement('div'); r.className='frow';
+      r.innerHTML=`<span>🎬</span>
+        <span class="fname">${esc(f.name)}</span>
+        <span class="fsize">${fmt(f.size)}</span>
+        <button class="btn bplay bsm" onclick="play('${hash}','${f.index}','${esc(f.path)}');event.stopPropagation()">▶ MPV</button>
+        <button class="btn bdl bsm" onclick="dlFiles('${hash}','${f.index}');event.stopPropagation()">⬇</button>`;
+      r.onclick=()=>play(hash,f.index,f.path);
+      fb.querySelector('.flist').appendChild(r);
+    });
+    return;
+  }
+
+  // Series
+  fb.innerHTML='';
+  tree.seasons.forEach(s => {
+    const indices = s.episodes.map(ep=>ep.index).join(',');
+    const blk = document.createElement('div'); blk.className='sblock';
+    blk.innerHTML=`
+      <div class="shdr" onclick="toggleS(this)">
+        <span class="sname">Seizoen ${s.season} <span class="ec">${s.episodes.length} afl.</span></span>
+        <div class="sact" onclick="event.stopPropagation()">
+          <button class="btn bdl bsm" onclick="dlFiles('${hash}','${indices}')">⬇ Seizoen</button>
+        </div>
+        <span class="chev">▼</span>
+      </div>
+      <div class="eplist"></div>`;
+    const el = blk.querySelector('.eplist');
+    s.episodes.forEach(ep => {
+      const r=document.createElement('div'); r.className='eprow';
+      const epL = ep.episode ? 'E'+String(ep.episode).padStart(2,'0') : '—';
+      r.innerHTML=`<span class="epn">${epL}</span>
+        <span class="epname" title="${esc(ep.name)}">${esc(ep.name)}</span>
+        <span class="epsize">${fmt(ep.size)}</span>
+        <div class="epact">
+          <button class="btn bplay bsm" onclick="play('${hash}','${ep.index}','${esc(ep.path)}')">▶ MPV</button>
+          <button class="btn bdl bsm" onclick="dlFiles('${hash}','${ep.index}')">⬇</button>
+        </div>`;
+      el.appendChild(r);
+    });
+    fb.appendChild(blk);
+  });
+
+  if (tree.orphans&&tree.orphans.length) {
+    const blk=document.createElement('div'); blk.className='sblock';
+    blk.innerHTML=`
+      <div class="shdr" onclick="toggleS(this)">
+        <span class="sname">Overige <span class="ec">${tree.orphans.length}</span></span>
+        <span class="chev">▼</span>
+      </div>
+      <div class="eplist"></div>`;
+    const el=blk.querySelector('.eplist');
+    tree.orphans.forEach(f=>{
+      const r=document.createElement('div'); r.className='eprow';
+      r.innerHTML=`<span class="epn">—</span>
+        <span class="epname">${esc(f.name)}</span>
+        <span class="epsize">${fmt(f.size)}</span>
+        <div class="epact">
+          <button class="btn bplay bsm" onclick="play('${hash}','${f.index}','${esc(f.path)}')">▶ MPV</button>
+          <button class="btn bdl bsm" onclick="dlFiles('${hash}','${f.index}')">⬇</button>
+        </div>`;
+      el.appendChild(r);
+    });
+    fb.appendChild(blk);
+  }
+}
+
+function toggleS(hdr) {
+  hdr.classList.toggle('open');
+  const el=hdr.nextElementSibling;
+  el.style.display=el.style.display==='flex'?'none':'flex';
+  el.style.flexDirection='column';
+}
+
+function fallbackRow(hash) {
+  return `<div class="flist"><div class="frow" onclick="play('${hash}','0','')">
+    <span>🎬</span><span class="fname">Automatisch selecteren</span>
+    <button class="btn bplay bsm">▶ MPV</button>
+    <button class="btn bdl bsm" onclick="dlAll('${hash}');event.stopPropagation()">⬇</button>
+  </div></div>`;
+}
+
+// ── Actions ───────────────────────────────────────────────────────────────
+async function play(hash, index, path) {
+  toast('🚀 MPV wordt gestart...','ok');
+  const url=`/play?hash=${encodeURIComponent(hash)}&index=${index}&path=${encodeURIComponent(path||'')}`;
+  try { await fetch(url); } catch { toast('⚠ Server niet bereikbaar','err'); }
+}
+
+async function dlFiles(hash, indices) {
+  toast('⬇ Toevoegen aan qBittorrent...','ok');
+  try {
+    const r=await fetch(`/download?hash=${encodeURIComponent(hash)}&files=${encodeURIComponent(String(indices))}`).then(r=>r.json());
+    r.ok ? toast(`✓ Download gestart → ${r.savepath}`,'ok') : toast(`⚠ ${r.error}`,'err');
+  } catch { toast('⚠ qBittorrent niet bereikbaar (poort 8080)','err'); }
+}
+
+async function dlAll(hash) {
+  toast('⬇ Volledige torrent...','ok');
+  try {
+    const r=await fetch(`/download?hash=${encodeURIComponent(hash)}`).then(r=>r.json());
+    r.ok ? toast(`✓ → ${r.savepath}`,'ok') : toast(`⚠ ${r.error}`,'err');
+  } catch { toast('⚠ qBittorrent niet bereikbaar (poort 8080)','err'); }
+}
+</script>
+</body>
+</html>
